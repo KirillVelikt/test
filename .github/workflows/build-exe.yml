@@ -1,0 +1,57 @@
+name: Build EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Найти папку пульта
+        id: locate
+        shell: bash
+        run: |
+          f=$(find . -name terminal_control.py -not -path '*/.git/*' | head -1)
+          if [ -z "$f" ]; then
+            echo "terminal_control.py не найден"
+            exit 1
+          fi
+          echo "dir=$(dirname "$f")" >> $GITHUB_OUTPUT
+
+      - name: Build EXE
+        run: |
+          pip install pyinstaller
+          pyinstaller --onefile --windowed --name TerminalControl terminal_control.py
+        working-directory: ${{ steps.locate.outputs.dir }}
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build Installer
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { $iscc = "C:\Program Files\Inno Setup 6\ISCC.exe" }
+          & $iscc installer/terminal_installer.iss
+        working-directory: ${{ steps.locate.outputs.dir }}
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: TerminalControl-EXE
+          path: ${{ steps.locate.outputs.dir }}/dist/TerminalControl.exe
+
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: TerminalControl-Installer
+          path: ${{ steps.locate.outputs.dir }}/Output/TerminalControlSetup.exe
