@@ -1,0 +1,59 @@
+name: Build EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          choco install innosetup -y --no-progress
+
+      - name: Find project dir
+        id: locate
+        shell: pwsh
+        run: |
+          $f = Get-ChildItem -Recurse -Filter "terminal_control.py" | Select-Object -First 1
+          if (-not $f) { Write-Error "terminal_control.py not found"; exit 1 }
+          Write-Output "dir=$($f.DirectoryName)" >> $env:GITHUB_OUTPUT
+          Write-Output "project at: $($f.DirectoryName)"
+
+      - name: Build EXE
+        run: pyinstaller --onefile --windowed --name TerminalControl terminal_control.py
+        working-directory: ${{ steps.locate.outputs.dir }}
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            $iscc = (Get-ChildItem "C:\Program Files*\Inno Setup*\ISCC.exe" -Recurse | Select-Object -First 1).FullName
+          }
+          Write-Output "ISCC: $iscc"
+          $iss = Get-ChildItem -Recurse -Filter "*.iss" | Select-Object -First 1
+          & $iscc $iss.FullName
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: TerminalControl-EXE
+          path: ${{ steps.locate.outputs.dir }}/dist/TerminalControl.exe
+
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: TerminalControl-Installer
+          path: ${{ steps.locate.outputs.dir }}/Output/*.exe

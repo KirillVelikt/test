@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_main"
+    android:padding="24dp">
+
+    <EditText
+        android:id="@+id/etName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="имя терминала"
+        android:textColorHint="@color/gray"
+        android:textColor="@color/white"
+        android:inputType="text"/>
+
+    <Switch
+        android:id="@+id/swSound"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="звуки"
+        android:textColor="@color/white"
+        android:textSize="16sp"/>
+
+    <Switch
+        android:id="@+id/swKeep"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="экран не гаснет при оплате"
+        android:textColor="@color/white"
+        android:textSize="16sp"/>
+
+    <Switch
+        android:id="@+id/swVibrate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="вибрация"
+        android:textColor="@color/white"
+        android:textSize="16sp"/>
+
+    <Button
+        android:id="@+id/btnSave"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_card_green"
+        android:text="сохранить"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="17sp"/>
+
+</LinearLayout>
