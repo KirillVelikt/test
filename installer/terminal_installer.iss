@@ -16,7 +16,8 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [Files]
 Source: "..\pc-control\dist\TerminalControl.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\pc-control\README.md"; DestDir: "{app}"; Flags: ignoreversion recursesubdirectories createallsubdirs
+Source: "..\pc-control\README.md"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
 
 [Icons]
 Name: "{group}\TerminalControl"; Filename: "{app}\TerminalControl.exe"
