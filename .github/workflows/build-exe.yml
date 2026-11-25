@@ -17,32 +17,35 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Найти папку пульта
-        id: locate
-        shell: bash
-        run: |
-          f=$(find . -name terminal_control.py -not -path '*/.git/*' | head -1)
-          if [ -z "$f" ]; then
-            echo "terminal_control.py не найден"
-            exit 1
-          fi
-          echo "dir=$(dirname "$f")" >> $GITHUB_OUTPUT
-
-      - name: Build EXE
+      - name: Install dependencies
         run: |
           pip install pyinstaller
-          pyinstaller --onefile --windowed --name TerminalControl terminal_control.py
+          choco install innosetup -y --no-progress
+
+      - name: Найти папку проекта
+        id: locate
+        shell: pwsh
+        run: |
+          $f = Get-ChildItem -Recurse -Filter "terminal_control.py" | Select-Object -First 1
+          if (-not $f) { Write-Error "terminal_control.py не найден"; exit 1 }
+          $dir = $f.DirectoryName
+          Write-Output "dir=$dir" >> $env:GITHUB_OUTPUT
+          Write-Output "Проект найден в: $dir"
+
+      - name: Build EXE
+        run: pyinstaller --onefile --windowed --name TerminalControl terminal_control.py
         working-directory: ${{ steps.locate.outputs.dir }}
 
-      - name: Install Inno Setup
-        run: choco install innosetup -y --no-progress
-
-      - name: Build Installer
+      - name: Compile installer
+        shell: pwsh
         run: |
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) { $iscc = "C:\Program Files\Inno Setup 6\ISCC.exe" }
-          & $iscc installer/terminal_installer.iss
-        working-directory: ${{ steps.locate.outputs.dir }}
+          if (-not (Test-Path $iscc)) {
+            $iscc = (Get-ChildItem "C:\Program Files*\Inno Setup*\ISCC.exe" -Recurse | Select-Object -First 1).FullName
+          }
+          Write-Output "ISCC: $iscc"
+          $iss = Get-ChildItem -Recurse -Filter "*.iss" | Select-Object -First 1
+          & $iscc $iss.FullName
 
       - name: Upload EXE
         uses: actions/upload-artifact@v4
@@ -54,4 +57,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TerminalControl-Installer
-          path: ${{ steps.locate.outputs.dir }}/Output/TerminalControlSetup.exe
+          path: ${{ steps.locate.outputs.dir }}/Output/*.exe
