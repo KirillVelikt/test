@@ -1,0 +1,49 @@
+name: Build EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Найти папку пульта
+        id: locate
+        shell: pwsh
+        run: |
+          $f = Get-ChildItem -Recurse -Filter terminal_control.py | Select-Object -First 1
+          if (-not $f) { Write-Error "terminal_control.py не найден"; exit 1 }
+          "dir=$($f.DirectoryName)" >> $env:GITHUB_OUTPUT
+
+      - name: Собрать EXE
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.dir }}
+        run: |
+          pip install pyinstaller
+          pyinstaller --onefile --name TerminalControl terminal_control.py
+
+      - name: Собрать установщик
+        shell: pwsh
+        working-directory: ${{ steps.locate.outputs.dir }}
+        run: |
+          choco install innosetup -y --no-progress
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          $iss = Get-ChildItem -Recurse -Filter terminal_installer.iss | Select-Object -First 1
+          & $iscc $iss.FullName
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: TerminalControl-EXE
+          path: ${{ steps.locate.outputs.dir }}/dist/TerminalControl.exe
+
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: TerminalControl-Installer
+          path: ${{ steps.locate.outputs.dir }}/Output/TerminalControlSetup.exe

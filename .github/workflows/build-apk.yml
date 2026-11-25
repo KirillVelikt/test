@@ -1,0 +1,45 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Найти папку проекта
+        id: locate
+        run: |
+          f=$(find . -name settings.gradle -not -path '*/.*' | head -1)
+          if [ -z "$f" ]; then
+            echo "settings.gradle не найден"
+            ls -R | head -50
+            exit 1
+          fi
+          echo "dir=$(dirname "$f")" >> $GITHUB_OUTPUT
+
+      - name: Build APK
+        run: gradle assembleDebug --no-daemon
+        working-directory: ${{ steps.locate.outputs.dir }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: ${{ steps.locate.outputs.dir }}/app/build/outputs/apk/debug/app-debug.apk
